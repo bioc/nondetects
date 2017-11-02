@@ -1,10 +1,11 @@
 # actual function
 qpcrImpute <- function(object, dj=NULL, pyfit=NULL, groupVars=NULL, batch=NULL, tol=1,
                        iterMax=100, outform=c("Single","Param","Multy"), 
-                       vary_fit=TRUE, vary_model=TRUE, add_noise=TRUE, formula=NULL, numsam=5)
+                       vary_fit=TRUE, vary_model=TRUE, add_noise=TRUE, 
+                       formula=NULL, numsam=5, linkglm = c("logit", "probit", "cloglog"))
 {
-
-  outform<-match.arg(outform)
+  linkglm <- match.arg(linkglm)
+  outform <- match.arg(outform)
   ## check input
   if(class(object)!="qPCRset") stop("Input data must be of class qPCRset.")
   if(sum(featureCategory(object) == "Undetermined") == 0){
@@ -87,7 +88,7 @@ qpcrImpute <- function(object, dj=NULL, pyfit=NULL, groupVars=NULL, batch=NULL, 
       p.nd <- as.vector(
         apply(featureCategory(object)[ind,], 1,
               function(x) by(x == "Undetermined", nrep, mean)))
-      gavg <- as.vector(
+      zs <- as.vector(
         apply(exprs(object)[ind,], 1, function(x) by(x, nrep, median)))
       ws <- as.vector(
         apply(featureCategory(object)[ind,], 1,
@@ -96,14 +97,15 @@ qpcrImpute <- function(object, dj=NULL, pyfit=NULL, groupVars=NULL, batch=NULL, 
         p.nd <- as.vector(
           apply(featureCategory(object)[ind,], 1,
                 function(x) mean(x == "Undetermined")))
-        gavg <- as.vector(
+        zs <- as.vector(
           apply(exprs(object)[ind,], 1, median))
         ws <- as.vector(
           apply(featureCategory(object)[ind,], 1, length))
       }
-    pyfit <- glm(p.nd~gavg, family=binomial(link=logit), weights=ws)
+   # pyfit <- glm(p.nd~zs, family=quasibinomial(link=linkglm), weights=ws) # GLM
+    pyfit <- bayesglm(p.nd~zs, family=binomial(link=linkglm), weights=ws)# Bayes GLM arm package
   }
-
+  
   ## format data for EM algorithm
   Ct    <- as.vector(exprs(object)[ind,])
   B.vec <- as.vector(B[ind,])
@@ -212,10 +214,14 @@ qpcrImpute <- function(object, dj=NULL, pyfit=NULL, groupVars=NULL, batch=NULL, 
     ## update fit
     tmp <- Ct
     tmp[which(as.logical(i.nd))] <- ez[which(as.logical(i.nd))]
-    gavg <- as.vector(by(tmp, paste(ntype, ngene, sep=":"), median))
-    p.nd <- as.vector(by(i.nd, paste(ntype, ngene, sep=":"), mean))
-    ws <- as.vector(by(i.nd, paste(ntype, ngene, sep=":"), length))
-    pyfit <- glm(p.nd~gavg, family=binomial(link=logit), weights=ws)
+    zs <- tmp
+    #gavg <- as.vector(by(tmp, paste(ntype, ngene, sep=":"), median))
+    #p.nd <- as.vector(by(i.nd, paste(ntype, ngene, sep=":"), mean))
+    #ws <- as.vector(by(i.nd, paste(ntype, ngene, sep=":"), length))
+    #pyfit <- glm(p.nd~gavg, family=binomial(link=logit), weights=ws)
+    
+    #pyfit <- glm(as.vector(i.nd)~zs, family=binomial(link=logit))
+    pyfit <- bayesglm(as.vector(i.nd)~zs, family=binomial(link=linkglm))# Bayes GLM arm package
   }
 
   ############# if statement about returning parameters or values
@@ -251,7 +257,8 @@ qpcrImpute <- function(object, dj=NULL, pyfit=NULL, groupVars=NULL, batch=NULL, 
         sigma2<-params.new$s2Mat.tst
         Parameters <- list("sigma2"=params.new$s2Mat,
                            "theta"=params.new$thetaMat,
-                           "formula"=formula, "tst"=tst)
+                           "formula"=formula, "tst"=tst,
+                           "fit"=pyfit) # added fit to the output
         colnames(Parameters$sigma2) <- colnames(Parameters$theta) <- substring(colnames(Parameters$tst$design),5)
         rownames(Parameters$sigma2) <- rownames(Parameters$theta) <- names(Parameters$tst$Amean)
         message("Parameters are saved in the list")

@@ -2,7 +2,9 @@
 
 ## prob of ND given Z
 cpNDz <- function(z0, mu, pyfit){
-  predict(pyfit, newdata=data.frame(gavg=z0+mu), type="response")
+ # predict(pyfit, newdata=data.frame(gavg=z0+mu), type="response")
+  predict(pyfit, newdata=data.frame(zs=z0+mu), type="response") #before was predict
+ # fitted( pyfit, newdata=data.frame(zs=z0+mu) ) # changed to fitted from predict(,type="response")
 }
 
 ## joint prob of ND,Z
@@ -176,7 +178,7 @@ multy <- function(object, pyfit, numsam, params.new, Ct, Y, dj, batch, ez, ez2,
    if (vary_model)
    {
     ## Valying the Thetas
-    error.sd <- params.new$sigma # use sigma from EM
+    error.sd <- params.new$sigma # use sigma from EM (lmFit from limma)
     #    error.sd <- params$sigma # use sigma from updated fit
     j <- which(!is.na(ez))
     gtmp <- unique(ngene[j])
