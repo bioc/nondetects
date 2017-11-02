@@ -5,6 +5,10 @@ author: "Valeriia Sherina, Matthew N. McCall"
 date: "`r Sys.Date()`"
 output: BiocStyle::html_document
 bibliography: nondetects.bib
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{nondetetcs}
+  %\VignetteEncoding{UTF-8}
 ---
 
 # 1 Background on non-detects in qPCR data
