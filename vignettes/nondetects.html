@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Valeriia Sherina, Matthew N. McCall" />
+
+<meta name="date" content="2017-12-21" />
+
+<title>Non-detects in qPCR data: methods to model and impute non-detects in the results of qPCR experiments (nondetects)</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Non-detects in qPCR data: methods to model and impute non-detects in the results of qPCR experiments (nondetects)</h1>
+<h4 class="author"><em>Valeriia Sherina, Matthew N. McCall</em></h4>
+<h4 class="date"><em>2017-12-21</em></h4>
+
+
+
+<div id="background-on-non-detects-in-qpcr-data" class="section level1">
+<h1>1 Background on non-detects in qPCR data</h1>
+<p>Quantitative real-time PCR (qPCR) measures gene expression for a subset of genes through repeated cycles of sequence-specific DNA amplification and expression measurements. During the exponential amplification phase, each cycle results in an approximate doubling of the quanitity of each target transcript. The threshold cycle (Ct) – the cycle at which the target gene’s expression first exceeds a predetermined threshold – is used to quantify the expression of each target gene. These Ct values typically represent the raw data from a qPCR experiment.</p>
+<p>One challenge of qPCR data is the presence of <em>non-detects</em> those reactions failing to attain the expression threshold. While most current software replaces these non-detects with the maximum possible Ct value (typically 40), recent work has shown that this introduces large biases in estimation of both absolute and differential expression. Here, we treat the non-detects as missing data, model the missing data mechanism, and use this model to impute Ct values for the non-detects.</p>
+</div>
+<div id="a-statistical-model-for-qpcr-non-detects" class="section level1">
+<h1>2 A statistical model for qPCR non-detects</h1>
+<p>We propose the following generative model for qPCR data in which <span class="math inline">\(Y_{ij}\)</span> is the measured expression value for gene <span class="math inline">\(i\)</span> in sample <span class="math inline">\(j\)</span>, some of which are missing (non-detects), <span class="math inline">\(X_{ij}\)</span> represents the fully observed expression values, and <span class="math inline">\(Z_{ij}\)</span> indicates whether a value is detected: <span class="math display">\[ X_{ij} = f(\theta_{ij}, \eta) + \varepsilon_{ij} \]</span> <span class="math display">\[ Y_{ij} = \left\{ \begin{array} 
+    {rr}
+    X_{ij} &amp; \textrm{if $Z_{ij}=1$}\\
+    \textrm{non-detect} &amp; \textrm{if $Z_{ij}=0$}
+    \end{array} \right.\]</span></p>
+<p>In this model, we assume that the fully observed expression values, <span class="math inline">\(X_{ij}\)</span> are a function of the true gene expression, <span class="math inline">\(\theta_{ij}\)</span>, non-biological factors, <span class="math inline">\(\eta\)</span>, and random measurement error, <span class="math inline">\(\varepsilon_{ij}\)</span>. The probability of an expressed value being detected is assumed to be a function of the expression value itself, <span class="math inline">\(g(X_{ij})\)</span>, for values below the detection limit, <span class="math inline">\(S\)</span>. The following logistic regression model is a natural choice for such a relationship:</p>
+<p><span class="math display">\[ Pr(Z_{ij}=1) = \left\{ \begin{array}
+{rr}
+g(X_{ij}) &amp; \textrm{if $X_{ij} &lt; 40$} \\
+0 &amp; \textrm{otherwise}
+\end{array} \right.\]</span></p>
+<p>Here, <span class="math inline">\(g(X_{ij})\)</span> can be estimated via the following logistic regression: <span class="math display">\[
+logit(Pr(Z_{ij}=1)) =  \beta_0 + \beta_1 X_{ij}
+\]</span></p>
+</div>
+<div id="example" class="section level1">
+<h1>3 Example</h1>
+<div id="data-from-sampson-et-al.-oncogene-2013" class="section level2">
+<h2>Data from Sampson <em>et al.</em> Oncogene 2013</h2>
+<p>Two cell types – young adult mouse colon (YAMC) cells and mutant-p53/activated-Ras transformed YAMC cells – in combination with three treatments – untreated, sodium butyrate, or valproic acid. Four replicates were performed for each cell-type/treatment combination <span class="citation">(E. Sampson et al. 2013)</span>.</p>
+</div>
+<div id="load-the-data" class="section level2">
+<h2>Load the data</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(HTqPCR)</code></pre></div>
+<pre><code>## Loading required package: Biobase</code></pre>
+<pre><code>## Loading required package: BiocGenerics</code></pre>
+<pre><code>## Loading required package: parallel</code></pre>
+<pre><code>## 
+## Attaching package: 'BiocGenerics'</code></pre>
+<pre><code>## The following objects are masked from 'package:parallel':
+## 
+##     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+##     clusterExport, clusterMap, parApply, parCapply, parLapply,
+##     parLapplyLB, parRapply, parSapply, parSapplyLB</code></pre>
+<pre><code>## The following objects are masked from 'package:stats':
+## 
+##     IQR, mad, xtabs</code></pre>
+<pre><code>## The following objects are masked from 'package:base':
+## 
+##     anyDuplicated, append, as.data.frame, cbind, colnames,
+##     do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+##     grepl, intersect, is.unsorted, lapply, lengths, Map, mapply,
+##     match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
+##     Position, rank, rbind, Reduce, rownames, sapply, setdiff,
+##     sort, table, tapply, union, unique, unsplit, which, which.max,
+##     which.min</code></pre>
+<pre><code>## Welcome to Bioconductor
+## 
+##     Vignettes contain introductory material; view with
+##     'browseVignettes()'. To cite Bioconductor, see
+##     'citation(&quot;Biobase&quot;)', and for packages 'citation(&quot;pkgname&quot;)'.</code></pre>
+<pre><code>## Loading required package: RColorBrewer</code></pre>
+<pre><code>## Loading required package: limma</code></pre>
+<pre><code>## 
+## Attaching package: 'limma'</code></pre>
+<pre><code>## The following object is masked from 'package:BiocGenerics':
+## 
+##     plotMA</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(mvtnorm)
+<span class="kw">library</span>(nondetects)
+<span class="kw">data</span>(oncogene2013)</code></pre></div>
+</div>
+<div id="examine-residuals-when-non-detects-are-replaced-by-40" class="section level2">
+<h2>Examine residuals when non-detects are replaced by 40</h2>
+<p>Normalize to Becn1:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">normCt &lt;-<span class="st"> </span><span class="kw">normalizeCtData</span>(oncogene2013, <span class="dt">norm =</span> <span class="st">&quot;deltaCt&quot;</span>, <span class="dt">deltaCt.genes =</span> <span class="st">&quot;Becn1&quot;</span>)</code></pre></div>
+<pre><code>## Calculating deltaCt values
+##  Using control gene(s): Becn1 
+##  Card 1: Mean=26.17  Stdev=NA
+##  Card 2: Mean=25.5   Stdev=NA
+##  Card 3: Mean=25.85  Stdev=NA
+##  Card 4: Mean=26.22  Stdev=NA
+##  Card 5: Mean=26.59  Stdev=NA
+##  Card 6: Mean=25.35  Stdev=NA
+##  Card 7: Mean=25.73  Stdev=NA
+##  Card 8: Mean=26.36  Stdev=NA
+##  Card 9: Mean=26.13  Stdev=NA
+##  Card 10:    Mean=25.38  Stdev=NA
+##  Card 11:    Mean=25.61  Stdev=NA
+##  Card 12:    Mean=26.52  Stdev=NA
+##  Card 13:    Mean=26.12  Stdev=NA
+##  Card 14:    Mean=26.56  Stdev=NA
+##  Card 15:    Mean=26.02  Stdev=NA
+##  Card 16:    Mean=25.5   Stdev=NA
+##  Card 17:    Mean=25.76  Stdev=NA
+##  Card 18:    Mean=26.03  Stdev=NA
+##  Card 19:    Mean=26.67  Stdev=NA
+##  Card 20:    Mean=26.69  Stdev=NA
+##  Card 21:    Mean=26.11  Stdev=NA
+##  Card 22:    Mean=25.86  Stdev=NA
+##  Card 23:    Mean=26.27  Stdev=NA
+##  Card 24:    Mean=26.26  Stdev=NA</code></pre>
+<p>Calculate residuals for each set of replicates:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">conds &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="kw">pData</span>(normCt)$sampleType,<span class="kw">pData</span>(normCt)$treatment,<span class="dt">sep=</span><span class="st">&quot;:&quot;</span>)
+resids &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="dt">nrow=</span><span class="kw">nrow</span>(normCt), <span class="dt">ncol=</span><span class="kw">ncol</span>(normCt))
+for(i in <span class="dv">1</span>:<span class="kw">nrow</span>(normCt)){
+  for(j in <span class="dv">1</span>:<span class="kw">ncol</span>(normCt)){
+    ind &lt;-<span class="st"> </span><span class="kw">which</span>(conds==conds[j])
+    resids[i,j] &lt;-<span class="st"> </span><span class="kw">exprs</span>(normCt)[i,j]-<span class="kw">mean</span>(<span class="kw">exprs</span>(normCt)[i,ind])
+  }
+}</code></pre></div>
+<p>Create boxplots of residuals stratified by the presence of a non-detect:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">iND &lt;-<span class="st"> </span><span class="kw">which</span>(<span class="kw">featureCategory</span>(normCt)==<span class="st">&quot;Undetermined&quot;</span>, <span class="dt">arr.ind=</span><span class="ot">TRUE</span>)
+iD &lt;-<span class="st"> </span><span class="kw">which</span>(<span class="kw">featureCategory</span>(normCt)!=<span class="st">&quot;Undetermined&quot;</span>, <span class="dt">arr.ind=</span><span class="ot">TRUE</span>)
+boxes &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;observed&quot;</span>=-resids[iD], <span class="st">&quot;non-detect&quot;</span>=-resids[iND])</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">boxplot</span>(boxes, <span class="dt">main=</span><span class="st">&quot;&quot;</span>,<span class="dt">ylim=</span><span class="kw">c</span>(-<span class="dv">5</span>,<span class="dv">5</span>),
+        <span class="dt">ylab=</span><span class="kw">expression</span>(<span class="kw">paste</span>(<span class="st">&quot;-&quot;</span>,Delta,<span class="st">&quot;Ct residuals&quot;</span>,<span class="dt">sep=</span><span class="st">&quot;&quot;</span>)))</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+<div id="impute-non-detects" class="section level2">
+<h2>Impute non-detects</h2>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">oncogene2013_1 &lt;-<span class="st"> </span><span class="kw">qpcrImpute</span>(oncogene2013, 
+<span class="dt">groupVars=</span><span class="kw">c</span>(<span class="st">&quot;sampleType&quot;</span>,<span class="st">&quot;treatment&quot;</span>), <span class="dt">outform =</span> <span class="kw">c</span>(<span class="st">&quot;Multy&quot;</span>), 
+<span class="dt">vary_fit=</span><span class="ot">FALSE</span>, <span class="dt">vary_model=</span><span class="ot">TRUE</span>, <span class="dt">add_noise=</span><span class="ot">TRUE</span>, <span class="dt">numsam=</span><span class="dv">2</span>,
+<span class="dt">linkglm =</span> <span class="kw">c</span>(<span class="st">&quot;logit&quot;</span>))</code></pre></div>
+<pre><code>## ~0 + nrep
+## &lt;environment: 0x00000000311c9078&gt;
+## [1] &quot;1 / 100&quot;</code></pre>
+<pre><code>## -1586.25396805468</code></pre>
+<pre><code>## Warning: fitted probabilities numerically 0 or 1 occurred</code></pre>
+<pre><code>## [1] &quot;2 / 100&quot;</code></pre>
+<pre><code>## -1548.71940906306</code></pre>
+<pre><code>## [1] &quot;3 / 100&quot;</code></pre>
+<pre><code>## -1527.64781568209</code></pre>
+<pre><code>## [1] &quot;4 / 100&quot;</code></pre>
+<pre><code>## -1510.53981738652</code></pre>
+<pre><code>## [1] &quot;5 / 100&quot;</code></pre>
+<pre><code>## -1496.52740063623</code></pre>
+<pre><code>## [1] &quot;6 / 100&quot;</code></pre>
+<pre><code>## -1487.98973882189</code></pre>
+<pre><code>## [1] &quot;7 / 100&quot;</code></pre>
+<pre><code>## -1483.36883794625</code></pre>
+<pre><code>## [1] &quot;8 / 100&quot;</code></pre>
+<pre><code>## -1480.58212929888</code></pre>
+<pre><code>## [1] &quot;9 / 100&quot;</code></pre>
+<pre><code>## -1478.76047810763</code></pre>
+<pre><code>## [1] &quot;10 / 100&quot;</code></pre>
+<pre><code>## -1477.52593078224</code></pre>
+<pre><code>## [1] &quot;11 / 100&quot;</code></pre>
+<pre><code>## -1476.67155721555</code></pre>
+<pre><code>## [1] &quot;Multy&quot;
+## vary model= TRUE vary_fit= FALSE add_noise= TRUE
+##  creating data set  1 
+## 
+##  creating data set  2</code></pre>
+</div>
+<div id="examine-residuals-when-non-detects-are-replaced-by-imputed-values" class="section level2">
+<h2>Examine residuals when non-detects are replaced by imputed values</h2>
+<p>Normalize to Becn1:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">normCt &lt;-<span class="st"> </span><span class="kw">normalizeCtData</span>(oncogene2013_1[[<span class="dv">1</span>]], <span class="dt">norm =</span> <span class="st">&quot;deltaCt&quot;</span>, <span class="dt">deltaCt.genes =</span> <span class="st">&quot;Becn1&quot;</span>)</code></pre></div>
+<pre><code>## Calculating deltaCt values
+##  Using control gene(s): Becn1 
+##  Card 1: Mean=26.17  Stdev=NA
+##  Card 2: Mean=25.5   Stdev=NA
+##  Card 3: Mean=25.85  Stdev=NA
+##  Card 4: Mean=26.22  Stdev=NA
+##  Card 5: Mean=26.59  Stdev=NA
+##  Card 6: Mean=25.35  Stdev=NA
+##  Card 7: Mean=25.73  Stdev=NA
+##  Card 8: Mean=26.36  Stdev=NA
+##  Card 9: Mean=26.13  Stdev=NA
+##  Card 10:    Mean=25.38  Stdev=NA
+##  Card 11:    Mean=25.61  Stdev=NA
+##  Card 12:    Mean=26.52  Stdev=NA
+##  Card 13:    Mean=26.12  Stdev=NA
+##  Card 14:    Mean=26.56  Stdev=NA
+##  Card 15:    Mean=26.02  Stdev=NA
+##  Card 16:    Mean=25.5   Stdev=NA
+##  Card 17:    Mean=25.76  Stdev=NA
+##  Card 18:    Mean=26.03  Stdev=NA
+##  Card 19:    Mean=26.67  Stdev=NA
+##  Card 20:    Mean=26.69  Stdev=NA
+##  Card 21:    Mean=26.11  Stdev=NA
+##  Card 22:    Mean=25.86  Stdev=NA
+##  Card 23:    Mean=26.27  Stdev=NA
+##  Card 24:    Mean=26.26  Stdev=NA</code></pre>
+<p>Remove the normalization gene:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">normCt &lt;-<span class="st"> </span>normCt[-<span class="kw">which</span>(<span class="kw">featureNames</span>(normCt)==<span class="st">&quot;Becn1&quot;</span>),]</code></pre></div>
+<p>Calculate residuals for each set of replicates:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">conds &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="kw">pData</span>(normCt)$sampleType,
+               <span class="kw">pData</span>(normCt)$treatment,<span class="dt">sep=</span><span class="st">&quot;:&quot;</span>)
+resids &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="dt">nrow=</span><span class="kw">nrow</span>(normCt), <span class="dt">ncol=</span><span class="kw">ncol</span>(normCt))
+for(i in <span class="dv">1</span>:<span class="kw">nrow</span>(normCt)){
+  for(j in <span class="dv">1</span>:<span class="kw">ncol</span>(normCt)){
+    ind &lt;-<span class="st"> </span><span class="kw">which</span>(conds==conds[j])
+    resids[i,j] &lt;-<span class="st"> </span><span class="kw">exprs</span>(normCt)[i,j]-<span class="kw">mean</span>(<span class="kw">exprs</span>(normCt)[i,ind])
+  }
+}</code></pre></div>
+<p>Create boxplots of residuals stratified by the presence of a non-detect:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">iI &lt;-<span class="st"> </span><span class="kw">which</span>(<span class="kw">featureCategory</span>(normCt)==<span class="st">&quot;Imputed&quot;</span>, <span class="dt">arr.ind=</span><span class="ot">TRUE</span>)
+iD &lt;-<span class="st"> </span><span class="kw">which</span>(<span class="kw">featureCategory</span>(normCt)!=<span class="st">&quot;Imputed&quot;</span>, <span class="dt">arr.ind=</span><span class="ot">TRUE</span>)
+boxes &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;observed&quot;</span>=-resids[iD], <span class="st">&quot;imputed&quot;</span>=-resids[iI])</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">boxplot</span>(boxes, <span class="dt">main=</span><span class="st">&quot;&quot;</span>,<span class="dt">ylim=</span><span class="kw">c</span>(-<span class="dv">5</span>,<span class="dv">5</span>),
+        <span class="dt">ylab=</span><span class="kw">expression</span>(<span class="kw">paste</span>(<span class="st">&quot;-&quot;</span>,Delta,<span class="st">&quot;Ct residuals&quot;</span>,<span class="dt">sep=</span><span class="st">&quot;&quot;</span>)))</code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+<div id="additional-examples" class="section level1">
+<h1>Additional examples</h1>
+<p>Two additional example data sets are used in the paper and included in the package. These are each briefly described below.</p>
+<div id="data-from-almudevar-et-al.-sagmb-2011" class="section level2">
+<h2>Data from Almudevar <em>et al.</em> SAGMB 2011</h2>
+<p>Cells transformed to malignancy by mutant p53 and activated Ras are perturbed with the aim of restoring gene expression to levels found in non-transformed parental cells via retrovirus-mediated re-expression of corresponding cDNAs or shRNA-dependent stable knock-down. The data contain 4-6 replicates for each perturbation, and each perturbation has a corresponding control sample in which only the vector has been added <span class="citation">(Almudevar et al. 2011)</span>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(nondetects)
+<span class="kw">data</span>(sagmb2011)</code></pre></div>
+</div>
+<div id="data-from-mcmurray-et-al.-nature-2008" class="section level2">
+<h2>Data from McMurray <em>et al.</em> Nature 2008</h2>
+<p>A study of the effect of p53 and/or Ras mutations on gene expression. The third dataset is a comparison between four cell types – YAMC cells, mutant-p53 YAMC cells, activated-Ras YAMC cells, and p53/Ras double mutant YAMC cells. Three replicates were performed for the untransformed YAMC cells, and four replicates were performed for each of the other cell types <span class="citation">(H. R. McMurray et al. 2008)</span>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(nondetects)
+<span class="kw">data</span>(nature2008)</code></pre></div>
+</div>
+</div>
+<div id="funding" class="section level1">
+<h1>Funding</h1>
+<p>This work was supported by National Institutes of Health [grant numbers CA009363, CA138249, HG006853]; and an Edelman-Gardner Foundation Award.</p>
+</div>
+<div id="session-info" class="section level1">
+<h1>Session Info</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sessionInfo</span>()</code></pre></div>
+<pre><code>## R version 3.3.3 (2017-03-06)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 16299)
+## 
+## locale:
+## [1] LC_COLLATE=English_United States.1252 
+## [2] LC_CTYPE=English_United States.1252   
+## [3] LC_MONETARY=English_United States.1252
+## [4] LC_NUMERIC=C                          
+## [5] LC_TIME=English_United States.1252    
+## 
+## attached base packages:
+## [1] parallel  stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+## [1] nondetects_2.9.1    mvtnorm_1.0-6       HTqPCR_1.28.0      
+## [4] limma_3.30.11       RColorBrewer_1.1-2  Biobase_2.34.0     
+## [7] BiocGenerics_0.20.0
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_0.12.9           nloptr_1.0.4          BiocInstaller_1.24.0 
+##  [4] bitops_1.0-6          tools_3.3.3           zlibbioc_1.20.0      
+##  [7] digest_0.6.12         lme4_1.1-12           evaluate_0.10        
+## [10] preprocessCore_1.36.0 nlme_3.1-131          lattice_0.20-34      
+## [13] Matrix_1.2-8          yaml_2.1.14           coda_0.19-1          
+## [16] stringr_1.2.0         knitr_1.15.1          gtools_3.5.0         
+## [19] caTools_1.17.1        stats4_3.3.3          rprojroot_1.2        
+## [22] grid_3.3.3            arm_1.9-3             rmarkdown_1.3        
+## [25] minqa_1.2.4           gdata_2.17.0          magrittr_1.5         
+## [28] backports_1.0.5       gplots_3.0.1          htmltools_0.3.5      
+## [31] MASS_7.3-45           splines_3.3.3         abind_1.4-5          
+## [34] KernSmooth_2.23-15    stringi_1.1.2         affy_1.52.0          
+## [37] affyio_1.44.0</code></pre>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-almudevar2011fitting">
+<p>Almudevar, Anthony, Matthew N McCall, Helene McMurray, and Hartmut Land. 2011. “Fitting Boolean Networks from Steady State Perturbation Data.” <em>Statistical Applications in Genetics and Molecular Biology</em> 10 (1). bepress: 47.</p>
+</div>
+<div id="ref-mcmurray2008synergistic">
+<p>McMurray, Helene R, Erik R Sampson, George Compitello, Conan Kinsey, Laurel Newman, Bradley Smith, Shaw-Ree Chen, et al. 2008. “Synergistic Response to Oncogenic Mutations Defines Gene Class Critical to Cancer Phenotype.” <em>Nature</em> 453 (7198). Nature Publishing Group: 1112–6.</p>
+</div>
+<div id="ref-sampson2012gene">
+<p>Sampson, ER, HR McMurray, DC Hassane, L Newman, P Salzman, CT Jordan, and H Land. 2013. “Gene Signature Critical to Cancer Phenotype as a Paradigm for Anticancer Drug Discovery.” <em>Oncogene</em> 32 (33). Nature Publishing Group: 3809–18.</p>
+</div>
+</div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
