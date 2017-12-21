@@ -3,12 +3,13 @@ title: 'Non-detects in qPCR data: methods to model and impute non-detects in the
   of qPCR experiments (nondetects)'
 author: "Valeriia Sherina, Matthew N. McCall"
 date: "`r Sys.Date()`"
-output: BiocStyle::html_document
-bibliography: nondetects.bib
+output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteIndexEntry{nondetetcs}
-  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteIndexEntry{Title of your vignette}
+  %\usepackage[UTF-8]{inputenc}
+#output: BiocStyle::html_document
+bibliography: nondetects.bib
 ---
 
 # 1 Background on non-detects in qPCR data
@@ -31,28 +32,27 @@ expression. Here, we treat the non-detects as missing data, model the
 missing data mechanism, and use this model to impute Ct values for the
 non-detects.
 
-# 2 EM algirithm
-We propose the following model of observed expression for gene $i$,
-sample-type $j$, and replicate $k$, $Y_{ijk}$:
-$$Y_{ijk} = \left\{ \begin{array}
-{rr}
-\theta_{ij} + \delta_{k} + \epsilon_{ijk} & \textrm{if $Z_{ijk}=1$}\\
-\textrm{non-detect} & \textrm{if $Z_{ijk}=0$}
-\end{array} \right.$$
+# 2 A statistical model for qPCR non-detects
+We propose the following generative model for qPCR data in which $Y_{ij}$ is the measured expression value for gene $i$ in sample $j$, some of which are missing (non-detects), $X_{ij}$ represents the fully observed expression values, and $Z_{ij}$ indicates whether a value is detected:
+$$ X_{ij} = f(\theta_{ij}, \eta) + \varepsilon_{ij} $$
+$$ Y_{ij} = \left\{ \begin{array} 
+	{rr}
+	X_{ij} & \textrm{if $Z_{ij}=1$}\\
+	\textrm{non-detect} & \textrm{if $Z_{ij}=0$}
+	\end{array} \right.$$
 
-where $\delta_{k}$ represents a global shift in expression across samples and,
-$$ Pr(Z_{ijk}=1) = \left\{ \begin{array}
+In this model, we assume that the fully observed expression values, $X_{ij}$ are a function of the true gene expression, $\theta_{ij}$, non-biological factors, $\eta$, and random measurement error, $\varepsilon_{ij}$. The probability of an expressed value being detected is assumed to be a function of the expression value itself, $g(X_{ij})$, for values below the detection limit, $S$. The following logistic regression model is a natural choice for such a relationship: 
+
+$$ Pr(Z_{ij}=1) = \left\{ \begin{array}
 {rr}
-g(Y_{ijk}) & \textrm{if $Y_{ijk} < 40$} \\
+g(X_{ij}) & \textrm{if $X_{ij} < 40$} \\
 0 & \textrm{otherwise}
 \end{array} \right.$$
 
-Here, $g(Y_{ijk})$ can be estimated via the following logistic regression:
+Here, $g(X_{ij})$ can be estimated via the following logistic regression:
 \[
-logit(Pr(Z_{ijk}=1)) =  \beta_0 + \beta_1 median(Y_{ij.})
+logit(Pr(Z_{ij}=1)) =  \beta_0 + \beta_1 X_{ij}
 \]
-where $median(Y_{ij.})$ is an estimate of the average expression for
-gene $i$ and sample-type $j$ over $k$ replicates.
 
 # 3 Example
 
@@ -106,7 +106,8 @@ boxplot(boxes, main="",ylim=c(-5,5),
 ```{r, echo=TRUE}
 oncogene2013_1 <- qpcrImpute(oncogene2013, 
 groupVars=c("sampleType","treatment"), outform = c("Multy"), 
-vary_fit=FALSE, vary_model=TRUE, add_noise=TRUE, numsam=2)
+vary_fit=FALSE, vary_model=TRUE, add_noise=TRUE, numsam=2,
+linkglm = c("logit"))
 ``` 
 
 ## Examine residuals when non-detects are replaced by imputed values
