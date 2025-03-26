@@ -1,5 +1,5 @@
 Package: nondetects
-Version: 2.37.0
+Version: 2.37.1
 Date: 2017-12-07
 Title: Non-detects in qPCR data
 Description: Methods to model and impute non-detects in the results of
@@ -20,3 +20,4 @@ biocViews: Software, AssayDomain, GeneExpression, Technology, qPCR,
 License: GPL-3 
 Encoding: UTF-8
 LazyData: true
+PackageStatus: Deprecated
